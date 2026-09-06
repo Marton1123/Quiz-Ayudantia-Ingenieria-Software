@@ -5,11 +5,22 @@ export class RealtimeQuizService {
     this.roomCode = roomCode;
     this.channel = null;
     this.isSubscribed = false;
+    this.pendingEvents = [];
+    this.pendingTrack = null;
   }
 
-  subscribe({ onPlayerJoin, onPlayerVote, onGameState, onNextQuestion, onGameEnd }) {
+  subscribe({
+    onConnected,
+    onPlayerJoin,
+    onPlayerVote,
+    onGameState,
+    onNextQuestion,
+    onGameEnd,
+    onPresenceSync,
+    onPlayerReject,
+  } = {}) {
     if (!isSupabaseConfigured || !supabase) {
-      console.warn("Supabase no esta configurado. Ejecutando en modo local.");
+      console.warn("Supabase no esta configurado. Modo local activado.");
       return;
     }
 
@@ -17,6 +28,7 @@ export class RealtimeQuizService {
     this.channel = supabase.channel(channelName, {
       config: {
         broadcast: { ack: true, self: false },
+        presence: { key: "" },
       },
     });
 
@@ -50,14 +62,96 @@ export class RealtimeQuizService {
       });
     }
 
-    this.channel.subscribe((status) => {
+    if (onPlayerReject) {
+      this.channel.on("broadcast", { event: "player:reject" }, ({ payload }) => {
+        onPlayerReject(payload);
+      });
+    }
+
+    if (onPresenceSync) {
+      this.channel.on("presence", { event: "sync" }, () => {
+        const state = this.channel ? this.channel.presenceState() : {};
+        const activePlayers = [];
+        const seenNames = new Set();
+
+        for (const key in state) {
+          for (const item of state[key]) {
+            if (item && item.name && !seenNames.has(item.name)) {
+              seenNames.add(item.name);
+              activePlayers.push(item);
+            }
+          }
+        }
+        onPresenceSync(activePlayers);
+      });
+    }
+
+    this.channel.subscribe(async (status) => {
       this.isSubscribed = status === "SUBSCRIBED";
+
+      if (this.isSubscribed) {
+        if (this.pendingTrack) {
+          try {
+            await this.channel.track(this.pendingTrack);
+          } catch (err) {
+            console.error("Error al registrar presencia pendiente:", err);
+          }
+          this.pendingTrack = null;
+        }
+
+        while (this.pendingEvents.length > 0) {
+          const { eventName, payload } = this.pendingEvents.shift();
+          try {
+            await this.channel.send({
+              type: "broadcast",
+              event: eventName,
+              payload,
+            });
+          } catch (err) {
+            console.error("Error al vaciar evento en cola:", err);
+          }
+        }
+
+        if (onConnected) {
+          onConnected();
+        }
+      }
     });
+  }
+
+  async trackPresence(playerData) {
+    if (!this.channel || !this.isSubscribed) {
+      this.pendingTrack = playerData;
+      return;
+    }
+    try {
+      await this.channel.track(playerData);
+    } catch (err) {
+      console.error("Error al registrar presencia:", err);
+    }
+  }
+
+  getPresencePlayers() {
+    if (!this.channel) return [];
+    const state = this.channel.presenceState();
+    const activePlayers = [];
+    const seenNames = new Set();
+
+    for (const key in state) {
+      for (const item of state[key]) {
+        if (item && item.name && !seenNames.has(item.name)) {
+          seenNames.add(item.name);
+          activePlayers.push(item);
+        }
+      }
+    }
+    return activePlayers;
   }
 
   async broadcastEvent(eventName, payload) {
     if (!this.channel || !this.isSubscribed) {
-      return false;
+      this.pendingEvents.push({ eventName, payload });
+      return true;
     }
     try {
       await this.channel.send({
@@ -92,11 +186,17 @@ export class RealtimeQuizService {
     return this.broadcastEvent("game:end", summaryPayload);
   }
 
+  broadcastReject(rejectPayload) {
+    return this.broadcastEvent("player:reject", rejectPayload);
+  }
+
   unsubscribe() {
     if (this.channel) {
       supabase.removeChannel(this.channel);
       this.channel = null;
       this.isSubscribed = false;
+      this.pendingEvents = [];
+      this.pendingTrack = null;
     }
   }
 }

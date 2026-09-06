@@ -1,14 +1,27 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { RealtimeQuizService } from '../services/realtimeService';
-import { GAME_PHASES } from '../config/constants';
-import Card from '../components/common/Card';
-import Button from '../components/common/Button';
-import Badge from '../components/common/Badge';
-import TimerRing from '../components/quiz/TimerRing';
-import VoteBars from '../components/quiz/VoteBars';
-import Leaderboard from '../components/quiz/Leaderboard';
-import QuestionCard from '../components/quiz/QuestionCard';
-import { Monitor, Users, Play, ArrowRight, Eye, Trophy, RotateCcw, ArrowLeft } from 'lucide-react';
+import React, { useState, useEffect, useRef } from "react";
+import { RealtimeQuizService } from "../services/realtimeService";
+import { GAME_PHASES } from "../config/constants";
+import Card from "../components/common/Card";
+import Button from "../components/common/Button";
+import Badge from "../components/common/Badge";
+import QRCodeDisplay from "../components/common/QRCodeDisplay";
+import TimerRing from "../components/quiz/TimerRing";
+import VoteBars from "../components/quiz/VoteBars";
+import Leaderboard from "../components/quiz/Leaderboard";
+import QuestionCard from "../components/quiz/QuestionCard";
+import {
+  Monitor,
+  Users,
+  Play,
+  ArrowRight,
+  Eye,
+  Trophy,
+  RotateCcw,
+  ArrowLeft,
+  QrCode,
+  X,
+  Smartphone,
+} from "lucide-react";
 
 export default function HostScreen({ ayudantia, roomCode, onExit }) {
   const [phase, setPhase] = useState(GAME_PHASES.LOBBY);
@@ -16,28 +29,92 @@ export default function HostScreen({ ayudantia, roomCode, onExit }) {
   const [players, setPlayers] = useState([]);
   const [votes, setVotes] = useState({});
   const [remainingSeconds, setRemainingSeconds] = useState(ayudantia.defaultTimerSeconds || 30);
+  const [showQrModal, setShowQrModal] = useState(false);
+
   const timerRef = useRef(null);
   const serviceRef = useRef(null);
+  const playersRef = useRef([]);
+
 
   const currentQuestion = ayudantia.questions[currentQuestionIndex];
   const isLastQuestion = currentQuestionIndex === ayudantia.questions.length - 1;
+
+  useEffect(() => {
+    playersRef.current = players;
+  }, [players]);
+
+  const origin =
+    typeof window !== "undefined"
+      ? window.location.origin
+      : "https://quiz-ayudantia-ingenieria-software.vercel.app";
+  const joinUrl = `${origin}/?join=${roomCode}`;
 
   useEffect(() => {
     const service = new RealtimeQuizService(roomCode);
     serviceRef.current = service;
 
     service.subscribe({
-      onPlayerJoin: (player) => {
+      onConnected: () => {
+        service.trackPresence({ role: "host", name: "Docente-Host" });
+      },
+      onPresenceSync: (activePresences) => {
         setPlayers((prev) => {
-          if (prev.some((p) => p.name === player.name)) return prev;
-          return [...prev, { ...player, score: 0 }];
+          const currentMap = new Map(prev.map((p) => [p.name.toLowerCase(), p]));
+          let updated = false;
+
+          for (const item of activePresences) {
+            if (item.role === "host") continue;
+            const lower = item.name.toLowerCase();
+            if (!currentMap.has(lower)) {
+              currentMap.set(lower, {
+                id: item.id || Math.random().toString(36).substring(2, 9),
+                name: item.name,
+                score: item.score || 0,
+              });
+              updated = true;
+            }
+          }
+
+          return updated ? Array.from(currentMap.values()) : prev;
         });
       },
-      onPlayerVote: ({ optionLabel }) => {
+      onPlayerJoin: (player) => {
+        setPlayers((prev) => {
+          const existing = prev.find((p) => p.name.toLowerCase() === player.name.toLowerCase());
+          if (existing) {
+            if (serviceRef.current && player.id && existing.id !== player.id) {
+              serviceRef.current.broadcastReject({
+                name: player.name,
+                reason: `El apodo "${player.name}" ya esta en uso en esta sala.`,
+              });
+            }
+            return prev;
+          }
+          return [
+            ...prev,
+            {
+              id: player.id || Math.random().toString(36).substring(2, 9),
+              name: player.name,
+              score: 0,
+            },
+          ];
+        });
+      },
+      onPlayerVote: ({ playerName, optionLabel }) => {
         setVotes((prev) => ({
           ...prev,
           [optionLabel]: (prev[optionLabel] || 0) + 1,
         }));
+
+        if (optionLabel === currentQuestion.answer) {
+          setPlayers((prev) =>
+            prev.map((p) =>
+              p.name.toLowerCase() === playerName.toLowerCase()
+                ? { ...p, score: p.score + 100 }
+                : p
+            )
+          );
+        }
       },
     });
 
@@ -45,23 +122,30 @@ export default function HostScreen({ ayudantia, roomCode, onExit }) {
       if (timerRef.current) clearInterval(timerRef.current);
       service.unsubscribe();
     };
-  }, [roomCode]);
+  }, [roomCode, currentQuestion.answer]);
 
   const startTimer = () => {
     if (timerRef.current) clearInterval(timerRef.current);
-    const totalTime = ayudantia.defaultTimerSeconds || 30;
-    setRemainingSeconds(totalTime);
+    const duration = ayudantia.defaultTimerSeconds || 30;
+    setRemainingSeconds(duration);
 
     timerRef.current = setInterval(() => {
       setRemainingSeconds((prev) => {
         if (prev <= 1) {
           clearInterval(timerRef.current);
-          handleRevealAnswer();
+          handleTimeUp();
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
+  };
+
+  const handleTimeUp = () => {
+    setPhase(GAME_PHASES.VOTES);
+    if (serviceRef.current) {
+      serviceRef.current.broadcastState({ phase: GAME_PHASES.VOTES });
+    }
   };
 
   const handleStartGame = () => {
@@ -80,13 +164,11 @@ export default function HostScreen({ ayudantia, roomCode, onExit }) {
   };
 
   const handleRevealAnswer = () => {
-    if (timerRef.current) clearInterval(timerRef.current);
     setPhase(GAME_PHASES.REVEAL);
-
     if (serviceRef.current) {
       serviceRef.current.broadcastState({
         phase: GAME_PHASES.REVEAL,
-        correctAnswerIndex: currentQuestion.ans,
+        correctAnswerIndex: currentQuestion.answer,
       });
     }
   };
@@ -94,10 +176,7 @@ export default function HostScreen({ ayudantia, roomCode, onExit }) {
   const handleShowLeaderboard = () => {
     setPhase(GAME_PHASES.LEADERBOARD);
     if (serviceRef.current) {
-      serviceRef.current.broadcastState({
-        phase: GAME_PHASES.LEADERBOARD,
-        players,
-      });
+      serviceRef.current.broadcastState({ phase: GAME_PHASES.LEADERBOARD });
     }
   };
 
@@ -105,7 +184,9 @@ export default function HostScreen({ ayudantia, roomCode, onExit }) {
     if (isLastQuestion) {
       setPhase(GAME_PHASES.FINISHED);
       if (serviceRef.current) {
-        serviceRef.current.broadcastEnd({ players });
+        serviceRef.current.broadcastEnd({
+          players: playersRef.current,
+        });
       }
       return;
     }
@@ -128,173 +209,300 @@ export default function HostScreen({ ayudantia, roomCode, onExit }) {
   const totalVotesCount = Object.values(votes).reduce((sum, val) => sum + val, 0);
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#F8FAFC', padding: '24px 20px' }}>
-      <header style={{ maxWidth: '1100px', margin: '0 auto 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+    <div style={{ minHeight: "100vh", backgroundColor: "#F8FAFC", padding: "24px 20px" }}>
+      <header style={{ maxWidth: "1100px", margin: "0 auto 24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <Button variant="secondary" size="sm" icon={ArrowLeft} onClick={onExit}>
             Salir al Menu
           </Button>
-          <span style={{ fontWeight: 700, color: '#1E2761', fontSize: '16px' }}>
+          <span style={{ fontWeight: 700, color: "#1E2761", fontSize: "16px" }}>
             {ayudantia.title}
           </span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={QrCode}
+            onClick={() => setShowQrModal(true)}
+            title="Mostrar codigo QR para estudiantes rezagados"
+          >
+            QR Sala
+          </Button>
           <Badge variant="amber" icon={Users}>
             {players.length} conectados
           </Badge>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 14px', backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-            <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 600 }}>SALA:</span>
-            <span style={{ fontFamily: 'Consolas, monospace', fontWeight: 800, fontSize: '16px', color: '#1E2761' }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "6px 14px", backgroundColor: "#FFFFFF", borderRadius: "8px", border: "1px solid #E2E8F0" }}>
+            <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 600 }}>SALA:</span>
+            <span style={{ fontFamily: "Consolas, monospace", fontWeight: 800, fontSize: "16px", color: "#1E2761" }}>
               {roomCode}
             </span>
           </div>
         </div>
       </header>
 
-      <main style={{ maxWidth: '1100px', margin: '0 auto' }}>
-        {/* 1. Fase Lobby */}
-        {phase === GAME_PHASES.LOBBY && (
-          <Card style={{ textAlign: 'center', padding: '48px 24px' }}>
-            <div style={{ width: '64px', height: '64px', borderRadius: '16px', backgroundColor: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px' }}>
-              <Monitor size={32} color="#1E2761" />
-            </div>
+      {/* Modal accesible de QR durante el juego */}
+      {showQrModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(15, 23, 42, 0.7)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+            padding: "20px",
+          }}
+          onClick={() => setShowQrModal(false)}
+        >
+          <div
+            style={{
+              backgroundColor: "#FFFFFF",
+              borderRadius: "20px",
+              padding: "28px",
+              maxWidth: "420px",
+              width: "100%",
+              boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.2)",
+              position: "relative",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setShowQrModal(false)}
+              style={{
+                position: "absolute",
+                top: "16px",
+                right: "16px",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: "#64748B",
+              }}
+            >
+              <X size={20} />
+            </button>
 
-            <h2 style={{ fontSize: '28px', fontWeight: 800, color: '#1E2761', marginBottom: '8px' }}>
-              Sala de Espera del Quiz
-            </h2>
-            <p style={{ color: '#64748B', fontSize: '16px', marginBottom: '24px' }}>
-              Pide a los estudiantes ingresar desde su celular con el codigo de sala:
+            <h3 style={{ fontSize: "20px", fontWeight: 800, color: "#1E2761", marginBottom: "4px", textAlign: "center" }}>
+              Unirse al Quiz
+            </h3>
+            <p style={{ fontSize: "13px", color: "#64748B", textAlign: "center", marginBottom: "16px" }}>
+              Escanea el codigo o entra directamente desde tu celular
             </p>
 
-            <div style={{ display: 'inline-block', padding: '16px 36px', backgroundColor: '#0F172A', color: '#FFFFFF', borderRadius: '12px', marginBottom: '32px' }}>
-              <span style={{ fontSize: '13px', display: 'block', color: '#94A3B8', letterSpacing: '1px', marginBottom: '4px' }}>CODIGO PIN</span>
-              <span style={{ fontFamily: 'Consolas, monospace', fontSize: '40px', fontWeight: 900, letterSpacing: '4px' }}>
-                {roomCode}
-              </span>
+            <QRCodeDisplay url={joinUrl} pin={roomCode} size={200} />
+
+            <div style={{ marginTop: "16px", textAlign: "center" }}>
+              <Button variant="secondary" fullWidth onClick={() => setShowQrModal(false)}>
+                Cerrar Ventana
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <main style={{ maxWidth: "1100px", margin: "0 auto" }}>
+        {/* 1. Fase Lobby */}
+        {phase === GAME_PHASES.LOBBY && (
+          <Card style={{ padding: "40px 32px" }}>
+            <div style={{ textAlign: "center", marginBottom: "32px" }}>
+              <div style={{ width: "56px", height: "56px", borderRadius: "14px", backgroundColor: "#EEF2FF", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+                <Monitor size={28} color="#1E2761" />
+              </div>
+              <h2 style={{ fontSize: "28px", fontWeight: 900, color: "#1E2761", marginBottom: "6px" }}>
+                Sala de Espera del Quiz
+              </h2>
+              <p style={{ color: "#64748B", fontSize: "16px" }}>
+                Escanea el codigo QR con tu celular o ingresa la direccion web y el PIN para participar:
+              </p>
             </div>
 
-            <div style={{ maxWidth: '640px', margin: '0 auto 32px' }}>
-              <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#334155', marginBottom: '14px' }}>
-                Estudiantes en la sala ({players.length}):
-              </h4>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center', minHeight: '60px' }}>
-                {players.map((p, idx) => (
-                  <Badge key={idx} variant="navy">
-                    {p.name}
-                  </Badge>
-                ))}
-                {players.length === 0 && (
-                  <p style={{ color: '#94A3B8', fontSize: '14px', fontStyle: 'italic' }}>
-                    Esperando a que los participantes ingresen su alias...
-                  </p>
-                )}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "32px", alignItems: "center", marginBottom: "36px" }}>
+              {/* Columna Izquierda: Generador de QR */}
+              <div style={{ display: "flex", justifyContent: "center" }}>
+                <QRCodeDisplay url={joinUrl} pin={roomCode} size={220} />
+              </div>
+
+              {/* Columna Derecha: Instrucciones y Alumnos Conectados */}
+              <div>
+                <div style={{ padding: "18px", backgroundColor: "#F8FAFC", borderRadius: "12px", border: "1px solid #E2E8F0", marginBottom: "20px" }}>
+                  <h4 style={{ fontSize: "14px", fontWeight: 700, color: "#1E2761", marginBottom: "10px", display: "flex", alignItems: "center", gap: "8px" }}>
+                    <Smartphone size={18} color="#D97706" />
+                    <span>Instrucciones para los estudiantes:</span>
+                  </h4>
+                  <ol style={{ margin: 0, paddingLeft: "20px", fontSize: "13.5px", color: "#475569", lineHeight: 1.6 }}>
+                    <li>Apunta la camara de tu celular al codigo QR o ingresa la URL mostrada.</li>
+                    <li>Verifica o edita tu apodo (o presiona Aleatorio).</li>
+                    <li>Presiona <strong>Entrar a la Sala</strong> para votar en vivo.</li>
+                  </ol>
+                </div>
+
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                    <h4 style={{ fontSize: "15px", fontWeight: 700, color: "#334155" }}>
+                      Estudiantes Conectados ({players.length}):
+                    </h4>
+                    <Badge variant={players.length > 0 ? "success" : "neutral"}>
+                      {players.length > 0 ? "Listo para iniciar" : "Esperando alumnos"}
+                    </Badge>
+                  </div>
+
+                  {players.length === 0 ? (
+                    <div style={{ padding: "24px", backgroundColor: "#F8FAFC", borderRadius: "10px", border: "1px dashed #CBD5E1", color: "#64748B", fontSize: "14px", textAlign: "center" }}>
+                      Aun no hay estudiantes conectados. Escanea el codigo para comenzar.
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", maxHeight: "150px", overflowY: "auto", padding: "4px" }}>
+                      {players.map((p) => (
+                        <span
+                          key={p.name}
+                          style={{
+                            padding: "6px 14px",
+                            backgroundColor: "#EEF2FF",
+                            color: "#1E2761",
+                            fontWeight: 700,
+                            borderRadius: "16px",
+                            fontSize: "13px",
+                            border: "1px solid #C7D2FE",
+                          }}
+                        >
+                          {p.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
-            <Button variant="accent" size="lg" icon={Play} onClick={handleStartGame}>
-              Iniciar Quiz Ahora
-            </Button>
+            <div style={{ textAlign: "center", borderTop: "1px solid #E2E8F0", paddingTop: "24px" }}>
+              <Button
+                variant="accent"
+                size="lg"
+                icon={Play}
+                onClick={handleStartGame}
+                disabled={players.length === 0}
+              >
+                Comenzar Quiz ({players.length} estudiantes)
+              </Button>
+            </div>
           </Card>
         )}
 
-        {/* 2. Fase Pregunta y Votacion */}
+        {/* 2. Fase de Pregunta y Votacion */}
         {phase === GAME_PHASES.QUESTION && (
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px" }}>
               <Badge variant="navy">
                 Pregunta {currentQuestionIndex + 1} de {ayudantia.questions.length}
               </Badge>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <TimerRing remainingSeconds={remainingSeconds} totalSeconds={ayudantia.defaultTimerSeconds || 30} />
-                <Button variant="secondary" icon={Eye} onClick={handleRevealAnswer}>
-                  Cerrar Votacion
-                </Button>
-              </div>
+              <TimerRing
+                remainingSeconds={remainingSeconds}
+                totalSeconds={ayudantia.defaultTimerSeconds || 30}
+                size={84}
+              />
+              <Badge variant="amber" icon={Users}>
+                {totalVotesCount} / {players.length} votos
+              </Badge>
             </div>
 
-            <QuestionCard
-              question={currentQuestion}
-              currentIndex={currentQuestionIndex}
-              totalQuestions={ayudantia.questions.length}
-              isRevealed={false}
-            />
+            <QuestionCard question={currentQuestion} showAnswer={false} />
 
-            <div style={{ marginTop: '24px' }}>
-              <VoteBars
-                votes={votes}
-                totalVotes={totalVotesCount}
-                optionsCount={currentQuestion.opts.length}
-                isRevealed={false}
-              />
+            <div style={{ marginTop: "24px", textAlign: "right" }}>
+              <Button variant="secondary" onClick={handleTimeUp}>
+                Cerrar Tiempo Manualmente
+              </Button>
             </div>
           </div>
         )}
 
-        {/* 3. Fase Revelacion de Respuesta */}
+        {/* 3. Fase de Votos Recibidos */}
+        {phase === GAME_PHASES.VOTES && (
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px" }}>
+              <Badge variant="neutral">Tiempo Finalizado</Badge>
+              <Badge variant="amber">Votos emitidos: {totalVotesCount}</Badge>
+            </div>
+
+            <QuestionCard question={currentQuestion} showAnswer={false} />
+
+            <Card title="Distribucion de Respuestas" subtitle="Votos emitidos por los estudiantes en la sala">
+              <VoteBars votes={votes} totalVotes={totalVotesCount} />
+            </Card>
+
+            <div style={{ marginTop: "24px", display: "flex", justifyContent: "flex-end" }}>
+              <Button variant="primary" icon={Eye} onClick={handleRevealAnswer}>
+                Revelar Respuesta Correcta
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* 4. Fase de Revelacion */}
         {phase === GAME_PHASES.REVEAL && (
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <Badge variant="success">Respuesta Revelada</Badge>
+            <div style={{ marginBottom: "18px" }}>
+              <Badge variant="success">Respuesta Oficial y Fundamento</Badge>
+            </div>
+
+            <QuestionCard question={currentQuestion} showAnswer={true} />
+
+            <div style={{ marginTop: "24px", display: "flex", justifyContent: "flex-end" }}>
               <Button variant="primary" icon={ArrowRight} onClick={handleShowLeaderboard}>
                 Ver Tabla de Posiciones
               </Button>
             </div>
+          </div>
+        )}
 
-            <QuestionCard
-              question={currentQuestion}
-              currentIndex={currentQuestionIndex}
-              totalQuestions={ayudantia.questions.length}
-              isRevealed={true}
-              showExplanation={true}
-            />
+        {/* 5. Fase de Tabla de Posiciones */}
+        {phase === GAME_PHASES.LEADERBOARD && (
+          <div>
+            <Card title="Tabla de Posiciones Parcial" subtitle="Puntajes acumulados tras la pregunta actual">
+              <Leaderboard players={players} />
+            </Card>
 
-            <div style={{ marginTop: '24px' }}>
-              <VoteBars
-                votes={votes}
-                totalVotes={totalVotesCount}
-                correctAnswerIndex={currentQuestion.ans}
-                optionsCount={currentQuestion.opts.length}
-                isRevealed={true}
-              />
+            <div style={{ marginTop: "24px", display: "flex", justifyContent: "flex-end" }}>
+              <Button variant="accent" icon={ArrowRight} onClick={handleNextQuestion}>
+                {isLastQuestion ? "Ver Podio Final" : "Siguiente Pregunta"}
+              </Button>
             </div>
           </div>
         )}
 
-        {/* 4. Fase Tabla de Posiciones */}
-        {phase === GAME_PHASES.LEADERBOARD && (
-          <Card style={{ textAlign: 'center', padding: '36px 20px' }}>
-            <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#1E2761', marginBottom: '20px' }}>
-              Tabla de Posiciones
-            </h2>
-            <Leaderboard players={players} />
-            <div style={{ marginTop: '28px' }}>
-              <Button variant="accent" size="lg" icon={ArrowRight} onClick={handleNextQuestion}>
-                {isLastQuestion ? 'Finalizar Quiz' : 'Siguiente Pregunta'}
-              </Button>
-            </div>
-          </Card>
-        )}
-
-        {/* 5. Fase Final */}
+        {/* 6. Fase Final y Podio */}
         {phase === GAME_PHASES.FINISHED && (
-          <Card style={{ textAlign: 'center', padding: '48px 24px' }}>
-            <div style={{ width: '64px', height: '64px', borderRadius: '16px', backgroundColor: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-              <Trophy size={36} color="#D97706" />
-            </div>
-            <h2 style={{ fontSize: '30px', fontWeight: 800, color: '#1E2761', marginBottom: '8px' }}>
-              Quiz Finalizado
-            </h2>
-            <p style={{ color: '#64748B', fontSize: '16px', marginBottom: '28px' }}>
-              Resultados finales de la actividad de modelamiento UML
-            </p>
-            <Leaderboard players={players} maxEntries={10} />
-            <div style={{ marginTop: '32px' }}>
-              <Button variant="primary" icon={RotateCcw} onClick={onExit}>
-                Volver al Menu Principal
+          <div>
+            <Card style={{ textAlign: "center", padding: "40px 24px", marginBottom: "24px" }}>
+              <div style={{ width: "64px", height: "64px", borderRadius: "16px", backgroundColor: "#FEF3C7", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+                <Trophy size={36} color="#D97706" />
+              </div>
+              <h2 style={{ fontSize: "28px", fontWeight: 900, color: "#1E2761", marginBottom: "8px" }}>
+                Quiz Finalizado con Exito
+              </h2>
+              <p style={{ color: "#64748B", fontSize: "16px" }}>
+                Felicitaciones a todos los participantes de la ayudantia.
+              </p>
+            </Card>
+
+            <Card title="Podio Final y Clasificacion" subtitle="Resultados definitivos de la sesion">
+              <Leaderboard players={players} />
+            </Card>
+
+            <div style={{ marginTop: "24px", display: "flex", justifyContent: "center", gap: "12px" }}>
+              <Button variant="primary" icon={RotateCcw} onClick={handleStartGame}>
+                Reiniciar Mismo Quiz
+              </Button>
+              <Button variant="secondary" onClick={onExit}>
+                Volver al Hub
               </Button>
             </div>
-          </Card>
+          </div>
         )}
       </main>
     </div>
