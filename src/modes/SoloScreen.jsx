@@ -3,7 +3,7 @@ import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import QuestionCard from '../components/quiz/QuestionCard';
-import { BookOpen, ArrowRight, RotateCcw, ArrowLeft, Trophy, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowRight, RotateCcw, ArrowLeft, Trophy } from 'lucide-react';
 
 export default function SoloScreen({ ayudantia, onExit }) {
   const [currentIndex, setCurrentIndex] = useState(0);

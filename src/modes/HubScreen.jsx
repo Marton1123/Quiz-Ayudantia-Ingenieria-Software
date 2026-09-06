@@ -5,7 +5,7 @@ import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import PrivacyNotice from '../components/common/PrivacyNotice';
 import { sanitizeNickname, sanitizeRoomCode, generateAnonymousAlias } from '../utils/sanitizers';
-import { Monitor, Smartphone, BookOpen, Users, Sparkles, ArrowRight } from 'lucide-react';
+import { Monitor, Smartphone, BookOpen } from 'lucide-react';
 
 export default function HubScreen({ onStartHost, onJoinPlayer, onStartSolo }) {
   const [selectedAyudantiaId, setSelectedAyudantiaId] = useState(AYUDANTIAS[0].id);

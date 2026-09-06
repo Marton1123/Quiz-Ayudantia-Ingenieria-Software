@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { RealtimeQuizService } from '../services/realtimeService';
-import { GAME_PHASES, OPTION_LABELS, OPTION_COLORS } from '../config/constants';
+import { GAME_PHASES, OPTION_COLORS } from '../config/constants';
 import Card from '../components/common/Card';
 import Badge from '../components/common/Badge';
 import Button from '../components/common/Button';
-import { Smartphone, CheckCircle, Clock, Trophy, ArrowLeft } from 'lucide-react';
+import { CheckCircle, Clock, Trophy, ArrowLeft } from 'lucide-react';
 
 export default function PlayerScreen({ playerInfo, onExit }) {
   const [gameState, setGameState] = useState({
@@ -14,7 +14,6 @@ export default function PlayerScreen({ playerInfo, onExit }) {
     correctAnswerIndex: null,
   });
   const [selectedOption, setSelectedOption] = useState(null);
-  const [score, setScore] = useState(0);
   const [hasVoted, setHasVoted] = useState(false);
   const serviceRef = useRef(null);
 

@@ -33,7 +33,7 @@ export default function HostScreen({ ayudantia, roomCode, onExit }) {
           return [...prev, { ...player, score: 0 }];
         });
       },
-      onPlayerVote: ({ playerName, optionLabel }) => {
+      onPlayerVote: ({ optionLabel }) => {
         setVotes((prev) => ({
           ...prev,
           [optionLabel]: (prev[optionLabel] || 0) + 1,
