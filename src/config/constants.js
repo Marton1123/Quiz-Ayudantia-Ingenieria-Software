@@ -1,6 +1,6 @@
 export const APP_CONFIG = {
   appName: "Quiz Ayudantia Ingenieria de Software",
-  defaultTimerSeconds: 30,
+  defaultTimerSeconds: 60,
   pointsPerCorrectAnswer: 1000,
   maxNicknameLength: 15,
   minNicknameLength: 2,

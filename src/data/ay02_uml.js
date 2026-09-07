@@ -2,223 +2,221 @@ export const ay02Uml = {
   id: "ay02",
   code: "AYUDANTIA2",
   number: 2,
-  title: "Taller de Modelamiento UML",
-  subtitle: "Casos de Uso, Clases, Actividad y Secuencia",
-  course: "Ingenieria de Software",
+  title: "Ayudantía N°2: Procesos, Requisitos y Diagramas UML",
+  subtitle: "Waterfall vs Ágil, RF/RNF, HU e INVEST, Casos de Uso, Clases, Actividad, Secuencia y Paquetes",
+  course: "Ingeniería de Software",
   semester: "2026-02",
-  description: "Evaluacion formativa e interactiva sobre fundamentos teoricos, simbologia estandar y aplicacion practica de diagramas UML en proyectos de software.",
-  defaultTimerSeconds: 30,
+  description: "Evaluación formativa sobre procesos de desarrollo, especificación de requisitos e historias de usuario, y modelado estructural y dinámico con diagramas UML.",
+  defaultTimerSeconds: 60,
   pointsPerQuestion: 1000,
   questions: [
     {
       id: 1,
-      topic: "Casos de Uso",
-      q: "Cual es la caracteristica definitoria de una relacion «include» entre dos casos de uso en UML?",
+      topic: "Procesos de Software",
+      q: "En el modelo Waterfall (Cascada), ¿cuál es el principal problema o riesgo al compararlo con un enfoque Ágil?",
       opts: [
-        "El caso de uso base se ejecuta siempre e incorpora de forma obligatoria el comportamiento del caso incluido.",
-        "El caso de uso incluido solo se ejecuta si se cumple una condicion excepcional de error en tiempo de ejecucion.",
-        "Representa una jerarquia de herencia donde el caso hijo especializa el comportamiento del padre.",
-        "Indica que ambos casos de uso se ejecutan de manera concurrente en hilos de ejecucion independientes."
+        "Exige automatizar la totalidad de las pruebas de integración desde el primer día de trabajo.",
+        "Impide utilizar lenguajes orientados a objetos durante la etapa de construcción.",
+        "El cliente solo ve el resultado al final, haciendo muy costosos los cambios tardíos.",
+        "Obliga a realizar sprints de dos semanas con incrementos funcionales validados."
       ],
-      ans: 0,
-      exp: "La relacion «include» es incondicional y obligatoria: el caso de uso base no puede completarse sin ejecutar el caso incluido (ejemplo: Crear Reserva incluye obligatoriamente Validar Disponibilidad)."
+      ans: 2,
+      exp: "En Cascada las fases son secuenciales (Requisitos, Diseño, Implementación, Pruebas, Mantenimiento). El cliente ve el software al final, por lo que cualquier cambio resulta muy costoso."
     },
     {
       id: 2,
-      topic: "Casos de Uso",
-      q: "En un diagrama de casos de uso, cuando es metodologicamente correcto emplear una relacion «extend»?",
+      topic: "Manifiesto Ágil",
+      q: "Según los cuatro valores del Manifiesto Ágil (2001) revisados en la sesión, ¿qué se valora POR SOBRE la documentación exhaustiva?",
       opts: [
-        "Para modelar un subproceso obligatorio que siempre forma parte del camino feliz.",
-        "Para modelar un comportamiento opcional o condicional que extiende al caso base solo bajo una condicion de extension especifica.",
-        "Para vincular dos actores que comparten los mismos privilegios de acceso en el sistema.",
-        "Para conectar una clase de control con su interfaz grafica de usuario correspondiente."
+        "El software funcionando.",
+        "El seguimiento estricto del plan.",
+        "La negociación de los contratos.",
+        "Los procesos y las herramientas."
       ],
-      ans: 1,
-      exp: "La relacion «extend» agrega comportamiento opcional, alternativo o condicional a un caso de uso base en puntos de extension definidos (ejemplo: Aplicar Cupon de Descuento extiende Pagar Reserva)."
+      ans: 0,
+      exp: "El Manifiesto Ágil establece: Individuos sobre procesos, Software funcionando sobre documentación extensiva, Colaboración sobre contratos y Respuesta al cambio sobre seguir un plan."
     },
     {
       id: 3,
-      topic: "Casos de Uso",
-      q: "Cual de las siguientes afirmaciones respecto a los Actores en UML es conceptualmente correcta?",
+      topic: "Requisitos No Funcionales (RNF)",
+      q: "En la sesión se recalcó que un RNF debe formularse siempre con una métrica verificable. ¿Cuál de los siguientes cumple esta regla?",
       opts: [
-        "Un actor representa exclusivamente a personas fisicas sentadas frente a la estacion de trabajo.",
-        "Los actores forman parte interna del limite del sistema (System Boundary).",
-        "Un actor modela un rol externo que interactua con el sistema, pudiendo ser un usuario humano o un sistema de software externo.",
-        "Los actores deben comunicarse entre si mediante flechas directas de asociacion dentro del diagrama."
+        "El sistema debe poseer una interfaz moderna, atractiva y completamente cómoda para el usuario.",
+        "La plataforma web tiene que responder a todas las consultas de manera muy veloz y eficiente.",
+        "La base de datos debe ser completamente robusta y segura ante fallas imprevistas de red.",
+        "El 99% de las búsquedas de salas deben responder en un tiempo menor a 1 segundo."
       ],
-      ans: 2,
-      exp: "Un actor modela cualquier entidad externa al limite del sistema (humana o automatizada, como una pasarela bancaria o un servicio de correos) que intercambia informacion con los casos de uso."
+      ans: 3,
+      exp: "Un Requisito No Funcional (el CÓMO) no debe ser ambiguo como 'debe ser rápido' o 'seguro', sino verificable objetivamente con una métrica cuantificable (ejemplo: 99% en < 1 segundo)."
     },
     {
       id: 4,
-      topic: "Casos de Uso",
-      q: "Al documentar la especificacion textual de un caso de uso, que representa el 'camino feliz' (Happy Path)?",
+      topic: "Requisitos Funcionales (RF)",
+      q: "Considerando los ejemplos analizados en la presentación, ¿cuál de las siguientes opciones corresponde a un Requisito Funcional (RF)?",
       opts: [
-        "La lista exhaustiva de excepciones de red y recuperacion ante fallas de hardware.",
-        "El flujo basico principal donde todos los pasos se ejecutan con exito sin desvios ni errores.",
-        "El diagrama de clases que genera el codigo fuente del modulo correspondiente.",
-        "La prueba de estres que determina la capacidad maxima de usuarios concurrentes."
+        "Garantizar una disponibilidad mensual del 99,9% en los servidores de la institución.",
+        "Bloquear el acceso al usuario que registre una deuda pendiente por entrega tardía.",
+        "Cifrar la totalidad de las comunicaciones utilizando certificados TLS de 256 bits.",
+        "Mantener el consumo de memoria del backend por debajo del límite de 512 megabytes."
       ],
       ans: 1,
-      exp: "El flujo basico o 'camino feliz' describe la secuencia ideal de pasos secuenciales en la que no se producen errores ni bifurcaciones excepcionales."
+      exp: "Los Requisitos Funcionales definen el QUÉ del sistema (acciones y servicios concretos: consultar disponibilidad, bloquear por deuda, calcular totales, etc.)."
     },
     {
       id: 5,
-      topic: "Diagrama de Clases",
-      q: "Cual es la diferencia fundamental entre una relacion de Composicion (rombo negro) y una de Agregacion (rombo blanco)?",
+      topic: "Historias de Usuario (HU)",
+      q: "Una Historia de Usuario ágil se compone de las 3C: Tarjeta, Conversaciones y Confirmación. ¿Qué representa la Confirmación?",
       opts: [
-        "La composicion permite que el objeto parte sobreviva libremente a la destruccion del objeto contenedor.",
-        "La composicion implica pertenencia fuerte y ciclo de vida dependiente: si el 'todo' se destruye, las 'partes' se destruyen con el.",
-        "La agregacion se representa con linea discontinua y carece de especificaciones de multiplicidad.",
-        "La agregacion solo vincula clases de la capa de datos con controladores de servicio."
+        "La firma legal del contrato acordado entre el cliente y los directores del proyecto general.",
+        "La estimación del esfuerzo en puntos de historia durante la planificación del sprint actual.",
+        "Los criterios de aceptación objetivos expresados bajo el formato Given / When / Then.",
+        "El diagrama de arquitectura de paquetes antes de comenzar la codificación del código fuente."
       ],
-      ans: 1,
-      exp: "En la Composicion (rombo relleno) el ciclo de vida de la parte esta fuertemente acoplado al todo (ejemplo: Factura e Items). En la Agregacion (rombo vacio) la parte puede existir independientemente del todo (ejemplo: Universidad y Estudiante)."
+      ans: 2,
+      exp: "La Confirmación corresponde a los criterios de aceptación que permiten validar si la historia está completada (habitualmente redactados en formato BDD: Dado que / Cuando / Entonces)."
     },
     {
       id: 6,
-      topic: "Diagrama de Clases",
-      q: "Como se representa formalmente la relacion de Generalizacion (Herencia) en un Diagrama de Clases UML estandar?",
+      topic: "Criterio INVEST",
+      q: "Dentro del criterio INVEST para redactar buenas Historias de Usuario, ¿qué significa que una historia sea 'Negotiable' (Negociable)?",
       opts: [
-        "Linea solida con flecha rellena abierta hacia la subclase especializada.",
-        "Linea discontinua terminada en un rombo transparente en su extremo superior.",
-        "Linea solida con un triangulo cerrado hueco (sin relleno) que apunta hacia la superclase (padre).",
-        "Linea curva bidireccional con flechas en ambos extremos."
+        "Que su alcance es ajustable mediante la conversación continua entre el equipo y el cliente.",
+        "Que carece de dependencias técnicas con respecto a otras historias del product backlog.",
+        "Que aporta un retorno económico o valor de negocio demostrable para los usuarios finales.",
+        "Que el equipo de desarrollo puede estimar su complejidad técnica sin ninguna incertidumbre."
       ],
-      ans: 2,
-      exp: "En la notacion formal UML, la generalizacion se representa con una linea continua que remata en un triangulo cerrado blanco (hueco) apuntando directamente a la clase general o superclase."
+      ans: 0,
+      exp: "Negotiable (Negociable) implica que la historia no es un contrato rígido e inmutable, sino una invitación a conversar y pactar detalles entre el cliente y el equipo de desarrollo."
     },
     {
       id: 7,
-      topic: "Diagrama de Clases",
-      q: "En la especificacion de atributos y metodos de una clase UML, que denotan los simbolos '+', '-' y '#'?",
+      topic: "Casos de Uso (Estructura)",
+      q: "En la estructura formal de un Caso de Uso, ¿a qué corresponde el 'flujo normal' o 'camino feliz'?",
       opts: [
-        "'+' Publico, '-' Privado, '#' Protegido (accesible por la clase y sus derivadas).",
-        "'+' Positivo, '-' Negativo, '#' Constante estatica de clase.",
-        "'+' Metodo estatico, '-' Metodo abstracto, '#' Metodo final no sobreescribible.",
-        "'+' Operacion sincrona, '-' Operacion asincrona, '#' Elemento deprecado."
+        "Al catálogo completo de fallas y excepciones registrado con códigos como 2a y 3b.",
+        "A la secuencia principal de pasos exitosos cuando todo funciona según lo esperado.",
+        "Al conjunto de permisos y precondiciones de red que habilitan iniciar la sesión de usuario.",
+        "A las tablas relacionales que el motor de base de datos actualiza en la transacción."
       ],
-      ans: 0,
-      exp: "Los estandares de visibilidad en UML establecen: '+' Public (acceso total), '-' Private (solo visible dentro de la clase) y '#' Protected (visible para la clase y sus subclases)."
+      ans: 1,
+      exp: "El flujo normal documenta la sucesión lineal ideal de pasos (máximo 9 según el estándar visto en la sesión) donde el actor alcanza su objetivo sin interferencias ni errores."
     },
     {
       id: 8,
-      topic: "Diagrama de Clases",
-      q: "Si en una asociacion entre 'Usuario' y 'Reserva' el extremo de Reserva indica multiplicidad '0..*', como debe interpretarse?",
+      topic: "Diagrama de Casos de Uso",
+      q: "En el Diagrama de Casos de Uso (UML) del sistema de reservas, ¿cuál es el rol formal de un 'Actor'?",
       opts: [
-        "Un usuario debe poseer exactamente una reserva obligatoria activa en el sistema.",
-        "Un usuario puede no tener reservas registradas o tener multiples reservas asociadas.",
-        "Todas las reservas registradas pertenecen obligatoriamente a cero usuarios simultaneos.",
-        "El sistema restringe a un maximo estricto de diez reservas por usuario."
+        "Una función o servicio interno programado dentro de la frontera del sistema de software.",
+        "Una clase abstracta de datos encargada de validar la autenticación de los usuarios.",
+        "Un servidor físico o base de datos que procesa peticiones en segundo plano continuo.",
+        "Una entidad externa (humana o sistema externo) que interactúa de forma activa con el CU."
       ],
-      ans: 1,
-      exp: "'0..*' senala una cota inferior de cero (relacion opcional, por ejemplo un usuario recien registrado) y una cota superior de muchos (sin limite prefijado)."
+      ans: 3,
+      exp: "Un Actor (representado gráficamente como una figura de palo o stick figure) es cualquier ente externo a la frontera del sistema que interactúa con los casos de uso."
     },
     {
       id: 9,
-      topic: "Diagrama de Actividad",
-      q: "Cual es el proposito fundamental de los carriles o Swimlanes en un Diagrama de Actividad UML?",
+      topic: "Relaciones en Casos de Uso",
+      q: "En el caso de reservas analizado, ¿por qué 'Crear Reserva' se conecta mediante «include» hacia 'Enviar Notificación'?",
       opts: [
-        "Modelar las claves primarias y relaciones foraneas del motor de base de datos.",
-        "Separar y delimitar claramente que actor, sistema o capa arquitectonica es responsable de ejecutar cada actividad.",
-        "Estimar el tiempo exacto en milisegundos que toma el procesamiento de cada rutina.",
-        "Sustituir a los diagramas de clases cuando el sistema no utiliza programacion orientada a objetos."
+        "Porque enviar la notificación es un subproceso obligatorio que siempre se debe ejecutar.",
+        "Porque enviar el mensaje es una opción facultativa que el usuario puede desmarcar si desea.",
+        "Porque Notificación representa una clase padre abstracta de la cual hereda la reserva.",
+        "Porque la notificación solo se envía si ocurre una falla inesperada al guardar la reserva."
       ],
-      ans: 1,
-      exp: "Los swimlanes organizan visualmente las actividades asignando la responsabilidad de cada accion a un rol o subsistema especifico (ejemplo: carril Estudiante frente a carril Sistema)."
+      ans: 0,
+      exp: "La relación «include» es incondicional y obligatoria: la ejecución del caso de uso base (Crear Reserva) necesariamente desencadena e incorpora el caso incluido (Enviar Notificación)."
     },
     {
       id: 10,
-      topic: "Diagrama de Actividad",
-      q: "Que regla formal deben cumplir las ramas que divergen desde un nodo de decision (rombo) en un diagrama de actividad?",
+      topic: "Diagrama de Clases UML",
+      q: "¿Cómo se representa gráficamente la relación de Herencia (generalización) en un Diagrama de Clases según el estándar UML?",
       opts: [
-        "Deben ejecutarse en paralelo de forma obligatoria mediante hilos independientes.",
-        "Deben poseer guardas textuales entre corchetes [condicion] que sean mutuamente excluyentes.",
-        "Deben converger directamente en el nodo de inicio sin transitar por actividades intermedias.",
-        "Solo pueden conectarse con clases abstractas mediante dependencias punteadas."
+        "Línea continua con un rombo sólido relleno de color negro en el extremo de la clase padre.",
+        "Línea discontinua que finaliza en una flecha abierta apuntando hacia la subclase derivada.",
+        "Línea continua con un triángulo cerrado hueco en el extremo que apunta a la superclase.",
+        "Línea sólida simple con multiplicidad cardinal 1 a muchos indicada en ambos extremos."
       ],
-      ans: 1,
-      exp: "Un nodo de decision evalua condiciones booleanas disyuntas denominadas guardas (ejemplo: [Si] y [No]); una sola transicion puede activarse segun el resultado de la evaluacion."
+      ans: 2,
+      exp: "La generalización o herencia se modela con una línea continua y un triángulo hueco (sin relleno) apuntando siempre hacia la superclase o clase padre (ejemplo: Administrador hereda de Usuario)."
     },
     {
       id: 11,
-      topic: "Diagrama de Actividad",
-      q: "Cual es la diferencia conceptual entre un rombo de decision y una barra de concurrencia (Fork) en un diagrama de actividad?",
+      topic: "Diagrama de Clases UML",
+      q: "En el modelado de clases, ¿cuál es la diferencia esencial entre Composición (rombo negro) y Agregación (rombo hueco)?",
       opts: [
-        "El rombo bifurca hacia un unico camino excluyente segun su guarda; la barra Fork inicia multiples flujos que se ejecutan concurrentemente.",
-        "El rombo solo se permite al inicio del flujo y la barra Fork unicamente al cierre del diagrama.",
-        "No existe diferencia; en la especificacion UML 2.5 ambos simbolos son semanticamente identicos.",
-        "La barra de concurrencia solo se utiliza para gestionar excepciones de conexion de red."
+        "En la composición los componentes subordinados pueden existir si se destruye el contenedor.",
+        "En la composición la parte no existe sin el todo: su ciclo de vida depende del contenedor.",
+        "La agregación utiliza exclusivamente líneas punteadas con flechas abiertas direccionales.",
+        "La agregación impide que múltiples clases compartan referencias a una misma instancia."
       ],
-      ans: 0,
-      exp: "El rombo (Decision) representa logica condicional disyuntiva ('O'). La barra Fork representa paralelismo concurrente ('Y'), activando simultaneamente todos los flujos salientes."
+      ans: 1,
+      exp: "La Composición (rombo relleno) representa una relación todo-parte fuerte donde la destrucción del contenedor implica la destrucción de sus partes. La Agregación (rombo vacío) es una unión débil."
     },
     {
       id: 12,
-      topic: "Diagrama de Secuencia",
-      q: "Como se distingue visualmente un mensaje sincrono de un mensaje de retorno en un Diagrama de Secuencia?",
+      topic: "Diagrama de Clases UML",
+      q: "En el diagrama del Sistema de Reservas, la asociación entre Usuario y Reserva muestra multiplicidad 1 a *. ¿Qué significa?",
       opts: [
-        "Mensaje sincrono: flecha discontinua abierta; mensaje de retorno: linea continua con doble punta.",
-        "Mensaje sincrono: linea solida con punta de flecha rellena; mensaje de retorno: linea discontinua con punta abierta.",
-        "Ambos mensajes se grafican mediante lineas continuas carentes de flechas direccionales.",
-        "El mensaje de retorno se dibuja en sentido vertical a lo largo del tiempo de la linea de vida."
+        "Cada reserva del sistema puede ser compartida en paralelo por múltiples usuarios simultáneos.",
+        "El sistema exige que todo usuario registrado mantenga exactamente una reserva obligatoria.",
+        "Las reservas son objetos inmutables que no admiten cancelaciones ni cambios de estado en BD.",
+        "Un usuario puede poseer cero o muchas reservas, pero cada reserva pertenece a un solo usuario."
       ],
-      ans: 1,
-      exp: "Una llamada sincrona bloqueante se representa con una linea continua y punta triangular solida (->). La respuesta con datos o confirmacion de retorno se representa con linea discontinua y punta abierta (- - ->)."
+      ans: 3,
+      exp: "La cardinalidad 1 a * señala que un usuario puede tener asociadas múltiples reservas (0 o más), mientras que cada instancia de Reserva queda vinculada unívocamente a 1 usuario creador."
     },
     {
       id: 13,
-      topic: "Diagrama de Secuencia",
-      q: "Que denota la presencia de una Barra de Activacion (rectangulo vertical) sobre una linea de vida en un Diagrama de Secuencia?",
+      topic: "Diagrama de Actividad",
+      q: "En el Diagrama de Actividad de 'Crear Reserva', ¿cuál es la finalidad técnica de los carriles o Swimlanes (Estudiante y Sistema)?",
       opts: [
-        "Que el componente o instancia ha sido recolectado por el Garbage Collector de la maquina virtual.",
-        "El intervalo de tiempo durante el cual la instancia retiene el control de ejecucion o ejecuta activamente un metodo.",
-        "Que el participante corresponde necesariamente a un actor humano y no a un servicio de software.",
-        "El conteo de sentencias SQL que el componente envia al gestor relacional."
+        "Medir la tasa de fallos de red y el consumo de memoria RAM durante cada etapa del proceso.",
+        "Dividir los archivos fuente en módulos de frontend y controladores backend de la aplicación.",
+        "Delimitar claramente qué rol o subsistema es responsable de llevar a cabo cada actividad.",
+        "Definir los permisos criptográficos requeridos para modificar las tablas de base de datos."
       ],
-      ans: 1,
-      exp: "La barra de activacion (Execution Specification) ilustra el lapso temporal durante el cual el objeto se encuentra ejecutando codigo o esperando que un llamado sincrono subordinado finalice."
+      ans: 2,
+      exp: "Los Swimlanes organizan visualmente las actividades asignando responsabilidades: en el ejemplo, 'Seleccionar fecha' compete a Estudiante, mientras 'Verificar disponibilidad' compete a Sistema."
     },
     {
       id: 14,
-      topic: "Diagrama de Secuencia",
-      q: "En una arquitectura desacoplada por capas modelada en secuencia, cual es el flujo de delegacion correcto para registrar una entidad?",
+      topic: "Diagrama de Actividad",
+      q: "¿Qué regla formal deben cumplir las transiciones salientes desde un rombo de decisión en un Diagrama de Actividad UML?",
       opts: [
-        "El Actor invoca directamente a la Base de Datos, y la Base de Datos refresca la Interfaz de Usuario.",
-        "La Base de Datos invoca a la Interfaz, la cual instancia las reglas de negocio en el Repositorio.",
-        "El Actor interactua con la Interfaz (:UI), la Interfaz delega la logica en el Servicio (:Service), y el Servicio persiste la entidad en el Repositorio (:Database).",
-        "El Servicio de negocio solicita autorizacion al Actor antes de atender los eventos provenientes de la Interfaz."
+        "Llevar guardas booleanas entre corchetes ([Sí], [No]) que resulten mutuamente excluyentes.",
+        "Ejecutarse simultáneamente en paralelo mediante hilos concurrentes hasta una barra de unión.",
+        "Conectarse directamente con el círculo negro de inicio para reiniciar el flujo del proceso.",
+        "Terminar obligatoriamente en un nodo diana de fin de actividad para detener la ejecución."
       ],
-      ans: 2,
-      exp: "El patron arquitectonico por capas prohibe el salto directo de presentacion a persistencia: la capa UI delega en el Service (logica de negocio), y el Service interactua con la capa de datos (Database)."
+      ans: 0,
+      exp: "Un rombo de decisión representa una bifurcación condicional disyuntiva: cada camino saliente debe contener una guarda entre corchetes (ej: [Sí] y [No]) que determine qué rama transitar."
     },
     {
       id: 15,
-      topic: "Encuentra el Error UML",
-      q: "Analiza el siguiente caso: Un diagrama de actividad ubica la tarea 'Verificar disponibilidad en base de datos' dentro del carril del 'Estudiante'. Cual es el error?",
-      diagramSnippet: "Carril [Estudiante]:\n  [Seleccionar Fecha y Hora] --> [Verificar disponibilidad en BD] (?)",
+      topic: "Diagrama de Secuencia",
+      q: "En el Diagrama de Secuencia de 'Crear Reserva', ¿cómo se distinguen los mensajes síncronos de los mensajes de retorno?",
       opts: [
-        "No existe error; el estudiante inicio el proceso, por ende le pertenecen todas las tareas derivadas.",
-        "Error de asignacion de responsabilidad: consultar la base de datos es una operacion interna del Sistema; debe situarse en el carril [Sistema].",
-        "Error de nomenclatura: los nombres de actividades deben contener maximo tres palabras tecnicas.",
-        "Error sintactico: no es posible conectar dos actividades consecutivas dentro del mismo carril."
+        "Mensaje síncrono con línea punteada abierta y retorno con rombo sólido en el participante.",
+        "Ambos tipos se grafican de forma idéntica sin emplear ningún tipo de punta direccional.",
+        "Mensaje síncrono con flecha bidireccional continua y retorno con barra vertical activa.",
+        "Mensaje síncrono con línea sólida y flecha triangular; retorno con línea discontinua de vuelta."
       ],
-      ans: 1,
-      exp: "Un estudiante humano no consulta bases de datos directamente; interactua seleccionando criterios en la interfaz, y es el Sistema en su propio carril el responsable de verificar la disponibilidad."
+      ans: 3,
+      exp: "Un mensaje síncrono (llamada bloqueante hacia :UI, :ReservaService o :Database) usa línea continua y punta sólida (->). El mensaje de respuesta o confirmación usa línea discontinua (- - ->)."
     },
     {
       id: 16,
-      topic: "Encuentra el Error UML",
-      q: "En un diagrama de casos de uso se modelo: '[Realizar Reserva] ---«extend»---> [Validar Identidad del Usuario]'. Sabiendo que la validacion es obligatoria para todos los usuarios, cual es la inconsistencia?",
-      diagramSnippet: "[Realizar Reserva] ----«extend»----> [Validar Identidad]",
+      topic: "Diagrama de Paquetes",
+      q: "En la arquitectura por capas analizada (Presentación, Servicio, Repositorio, Modelo), ¿cuál es la regla cardinal de dependencias?",
       opts: [
-        "No hay inconsistencia; «extend» se emplea obligatoriamente para operaciones de alta seguridad.",
-        "Inconsistencia de estereotipo: al ser una accion obligatoria e indispensable para completar la reserva, la relacion correcta es «include» desde el caso base al incluido.",
-        "Inconsistencia estructural: la validacion de identidad no puede modelarse como un caso de uso independiente.",
-        "Inconsistencia direccional: las relaciones «extend» solo pueden apuntar hacia actores secundarios."
+        "Las capas inferiores deben importar a las superiores para emitir eventos y notificaciones reactivas.",
+        "Las dependencias siempre van hacia abajo: una capa no debe importar de la capa que está sobre ella.",
+        "La capa de Presentación debe comunicarse directamente con la Base de Datos sin pasar por Servicio.",
+        "Todas las capas pueden relacionarse bidireccionalmente siempre que sus clases sean públicas."
       ],
       ans: 1,
-      exp: "«extend» modela extensiones condicionales u optativas. Si la validacion es un prerrequisito obligatorio para que la reserva se consume, debe usarse «include» con la flecha dirigida hacia Validar Identidad."
+      exp: "La regla de oro de la arquitectura por capas estipula que las dependencias fluyen estrictamente hacia abajo: Presentación -> Servicio -> Repositorio -> Modelo. Ninguna capa importa hacia arriba."
     }
   ]
 };

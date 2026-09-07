@@ -28,7 +28,7 @@ export default function HostScreen({ ayudantia, roomCode, onExit }) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [players, setPlayers] = useState([]);
   const [votes, setVotes] = useState({});
-  const [remainingSeconds, setRemainingSeconds] = useState(ayudantia.defaultTimerSeconds || 30);
+  const [remainingSeconds, setRemainingSeconds] = useState(ayudantia.defaultTimerSeconds || 60);
   const [showQrModal, setShowQrModal] = useState(false);
 
   const serviceRef = useRef(null);
@@ -181,14 +181,14 @@ export default function HostScreen({ ayudantia, roomCode, onExit }) {
   const handleStartGame = () => {
     setCurrentQuestionIndex(0);
     setVotes({});
-    setRemainingSeconds(ayudantia.defaultTimerSeconds || 30);
+    setRemainingSeconds(ayudantia.defaultTimerSeconds || 60);
     setPhase(GAME_PHASES.QUESTION);
 
     if (serviceRef.current) {
       serviceRef.current.broadcastNext({
         questionIndex: 0,
         totalQuestions: ayudantia.questions.length,
-        timerSeconds: ayudantia.defaultTimerSeconds || 30,
+        timerSeconds: ayudantia.defaultTimerSeconds || 60,
       });
     }
   };
@@ -224,14 +224,14 @@ export default function HostScreen({ ayudantia, roomCode, onExit }) {
     const nextIndex = currentQuestionIndex + 1;
     setCurrentQuestionIndex(nextIndex);
     setVotes({});
-    setRemainingSeconds(ayudantia.defaultTimerSeconds || 30);
+    setRemainingSeconds(ayudantia.defaultTimerSeconds || 60);
     setPhase(GAME_PHASES.QUESTION);
 
     if (serviceRef.current) {
       serviceRef.current.broadcastNext({
         questionIndex: nextIndex,
         totalQuestions: ayudantia.questions.length,
-        timerSeconds: ayudantia.defaultTimerSeconds || 30,
+        timerSeconds: ayudantia.defaultTimerSeconds || 60,
       });
     }
   };
@@ -433,7 +433,7 @@ export default function HostScreen({ ayudantia, roomCode, onExit }) {
               </Badge>
               <TimerRing
                 remainingSeconds={remainingSeconds}
-                totalSeconds={ayudantia.defaultTimerSeconds || 30}
+                totalSeconds={ayudantia.defaultTimerSeconds || 60}
                 size={84}
               />
               <Badge variant="amber" icon={Users}>
