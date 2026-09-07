@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { RealtimeQuizService } from "../services/realtimeService";
-import { GAME_PHASES } from "../config/constants";
+import { GAME_PHASES, OPTION_LABELS } from "../config/constants";
 import Card from "../components/common/Card";
 import Button from "../components/common/Button";
 import Badge from "../components/common/Badge";
@@ -34,7 +34,7 @@ export default function HostScreen({ ayudantia, roomCode, onExit }) {
   const timerRef = useRef(null);
   const serviceRef = useRef(null);
   const playersRef = useRef([]);
-
+  const gameStateRef = useRef({ phase: GAME_PHASES.LOBBY, index: 0 });
 
   const currentQuestion = ayudantia.questions[currentQuestionIndex];
   const isLastQuestion = currentQuestionIndex === ayudantia.questions.length - 1;
@@ -43,11 +43,17 @@ export default function HostScreen({ ayudantia, roomCode, onExit }) {
     playersRef.current = players;
   }, [players]);
 
+  useEffect(() => {
+    gameStateRef.current = { phase, index: currentQuestionIndex };
+  }, [phase, currentQuestionIndex]);
+
   const origin =
     typeof window !== "undefined"
       ? window.location.origin
       : "https://quiz-ayudantia-ingenieria-software.vercel.app";
   const joinUrl = `${origin}/?join=${roomCode}`;
+
+
 
   useEffect(() => {
     const service = new RealtimeQuizService(roomCode);
@@ -65,11 +71,19 @@ export default function HostScreen({ ayudantia, roomCode, onExit }) {
           for (const item of activePresences) {
             if (item.role === "host") continue;
             const lower = item.name.toLowerCase();
-            if (!currentMap.has(lower)) {
+            const existing = currentMap.get(lower);
+
+            if (!existing) {
               currentMap.set(lower, {
                 id: item.id || Math.random().toString(36).substring(2, 9),
                 name: item.name,
                 score: item.score || 0,
+              });
+              updated = true;
+            } else if (item.id && existing.id !== item.id) {
+              currentMap.set(lower, {
+                ...existing,
+                id: item.id,
               });
               updated = true;
             }
@@ -80,16 +94,32 @@ export default function HostScreen({ ayudantia, roomCode, onExit }) {
       },
       onPlayerJoin: (player) => {
         setPlayers((prev) => {
-          const existing = prev.find((p) => p.name.toLowerCase() === player.name.toLowerCase());
-          if (existing) {
-            if (serviceRef.current && player.id && existing.id !== player.id) {
-              serviceRef.current.broadcastReject({
-                name: player.name,
-                reason: `El apodo "${player.name}" ya esta en uso en esta sala.`,
-              });
-            }
-            return prev;
+          const lower = player.name.toLowerCase();
+          const existingIdx = prev.findIndex(
+            (p) => p.name.toLowerCase() === lower || (player.id && p.id === player.id)
+          );
+
+          if (serviceRef.current) {
+            const currentQ = ayudantia.questions[gameStateRef.current.index];
+            serviceRef.current.broadcastState({
+              phase: gameStateRef.current.phase,
+              questionIndex: gameStateRef.current.index,
+              totalQuestions: ayudantia.questions.length,
+              correctAnswerIndex:
+                gameStateRef.current.phase === GAME_PHASES.REVEAL ? currentQ.ans : null,
+            });
           }
+
+          if (existingIdx >= 0) {
+            const copy = [...prev];
+            copy[existingIdx] = {
+              ...copy[existingIdx],
+              id: player.id || copy[existingIdx].id,
+              name: player.name,
+            };
+            return copy;
+          }
+
           return [
             ...prev,
             {
@@ -106,7 +136,8 @@ export default function HostScreen({ ayudantia, roomCode, onExit }) {
           [optionLabel]: (prev[optionLabel] || 0) + 1,
         }));
 
-        if (optionLabel === currentQuestion.answer) {
+        const correctLabel = OPTION_LABELS[currentQuestion.ans];
+        if (optionLabel === correctLabel) {
           setPlayers((prev) =>
             prev.map((p) =>
               p.name.toLowerCase() === playerName.toLowerCase()
@@ -122,7 +153,7 @@ export default function HostScreen({ ayudantia, roomCode, onExit }) {
       if (timerRef.current) clearInterval(timerRef.current);
       service.unsubscribe();
     };
-  }, [roomCode, currentQuestion.answer]);
+  }, [roomCode, currentQuestion.ans, ayudantia.questions]);
 
   const startTimer = () => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -168,7 +199,7 @@ export default function HostScreen({ ayudantia, roomCode, onExit }) {
     if (serviceRef.current) {
       serviceRef.current.broadcastState({
         phase: GAME_PHASES.REVEAL,
-        correctAnswerIndex: currentQuestion.answer,
+        correctAnswerIndex: currentQuestion.ans,
       });
     }
   };
@@ -411,7 +442,13 @@ export default function HostScreen({ ayudantia, roomCode, onExit }) {
               </Badge>
             </div>
 
-            <QuestionCard question={currentQuestion} showAnswer={false} />
+            <QuestionCard
+              question={currentQuestion}
+              currentIndex={currentQuestionIndex}
+              totalQuestions={ayudantia.questions.length}
+              isRevealed={false}
+              showExplanation={false}
+            />
 
             <div style={{ marginTop: "24px", textAlign: "right" }}>
               <Button variant="secondary" onClick={handleTimeUp}>
@@ -429,9 +466,15 @@ export default function HostScreen({ ayudantia, roomCode, onExit }) {
               <Badge variant="amber">Votos emitidos: {totalVotesCount}</Badge>
             </div>
 
-            <QuestionCard question={currentQuestion} showAnswer={false} />
+            <QuestionCard
+              question={currentQuestion}
+              currentIndex={currentQuestionIndex}
+              totalQuestions={ayudantia.questions.length}
+              isRevealed={false}
+              showExplanation={false}
+            />
 
-            <Card title="Distribucion de Respuestas" subtitle="Votos emitidos por los estudiantes en la sala">
+            <Card title="Distribucion de Respuestas" subtitle="Votos emitidos por los estudiantes en la sala" style={{ marginTop: "20px" }}>
               <VoteBars votes={votes} totalVotes={totalVotesCount} />
             </Card>
 
@@ -446,11 +489,27 @@ export default function HostScreen({ ayudantia, roomCode, onExit }) {
         {/* 4. Fase de Revelacion */}
         {phase === GAME_PHASES.REVEAL && (
           <div>
-            <div style={{ marginBottom: "18px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px" }}>
               <Badge variant="success">Respuesta Oficial y Fundamento</Badge>
+              <Badge variant="amber">Votos emitidos: {totalVotesCount}</Badge>
             </div>
 
-            <QuestionCard question={currentQuestion} showAnswer={true} />
+            <QuestionCard
+              question={currentQuestion}
+              currentIndex={currentQuestionIndex}
+              totalQuestions={ayudantia.questions.length}
+              isRevealed={true}
+              showExplanation={true}
+            />
+
+            <Card title="Distribucion de Respuestas" subtitle="La barra verde senala la opcion correcta" style={{ marginTop: "20px" }}>
+              <VoteBars
+                votes={votes}
+                totalVotes={totalVotesCount}
+                correctAnswerIndex={currentQuestion.ans}
+                isRevealed={true}
+              />
+            </Card>
 
             <div style={{ marginTop: "24px", display: "flex", justifyContent: "flex-end" }}>
               <Button variant="primary" icon={ArrowRight} onClick={handleShowLeaderboard}>

@@ -168,7 +168,7 @@ export default function HubScreen({ onStartHost, onJoinPlayer, onStartSolo, init
                 <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#475569", marginBottom: "4px" }}>
                   Tu Apodo o Alias:
                 </label>
-                <div style={{ display: "flex", gap: "6px" }}>
+                <div style={{ display: "flex", gap: "8px", width: "100%" }}>
                   <input
                     type="text"
                     value={nickname}
@@ -180,6 +180,8 @@ export default function HubScreen({ onStartHost, onJoinPlayer, onStartSolo, init
                     maxLength={15}
                     style={{
                       flex: 1,
+                      minWidth: 0,
+                      boxSizing: "border-box",
                       padding: "10px 12px",
                       borderRadius: "8px",
                       border: "1px solid #CBD5E1",
@@ -191,21 +193,24 @@ export default function HubScreen({ onStartHost, onJoinPlayer, onStartSolo, init
                     type="button"
                     onClick={handleRandomAlias}
                     style={{
-                      padding: "0 12px",
+                      flexShrink: 0,
+                      whiteSpace: "nowrap",
+                      padding: "0 14px",
                       backgroundColor: "#F1F5F9",
                       border: "1px solid #CBD5E1",
                       borderRadius: "8px",
-                      fontSize: "12px",
+                      fontSize: "12.5px",
                       fontWeight: 600,
-                      color: "#475569",
+                      color: "#334155",
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
-                      gap: "4px",
+                      gap: "6px",
+                      boxSizing: "border-box",
                     }}
                     title="Generar alias anonimo aleatorio"
                   >
-                    <Shuffle size={13} />
+                    <Shuffle size={14} />
                     <span>Aleatorio</span>
                   </button>
                 </div>

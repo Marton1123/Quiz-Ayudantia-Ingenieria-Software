@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { RealtimeQuizService } from "../services/realtimeService";
-import { GAME_PHASES, OPTION_COLORS } from "../config/constants";
+import { GAME_PHASES, OPTION_COLORS, OPTION_LABELS } from "../config/constants";
 import Card from "../components/common/Card";
 import Badge from "../components/common/Badge";
 import Button from "../components/common/Button";
-import { CheckCircle, Clock, Trophy, ArrowLeft, Wifi, AlertTriangle } from "lucide-react";
+import { getPlayerDeviceId, clearActiveSession } from "../utils/session";
+import { CheckCircle, Clock, Trophy, ArrowLeft, Wifi, AlertTriangle, XCircle } from "lucide-react";
 
 export default function PlayerScreen({ playerInfo, onExit }) {
   const [gameState, setGameState] = useState({
@@ -16,8 +17,9 @@ export default function PlayerScreen({ playerInfo, onExit }) {
   const [selectedOption, setSelectedOption] = useState(null);
   const [hasVoted, setHasVoted] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
-  const [rejectedError, setRejectedError] = useState(null);
   const serviceRef = useRef(null);
+
+  const playerId = playerInfo.playerId || getPlayerDeviceId();
 
   useEffect(() => {
     const service = new RealtimeQuizService(playerInfo.roomCode);
@@ -27,12 +29,12 @@ export default function PlayerScreen({ playerInfo, onExit }) {
       onConnected: () => {
         setIsConnected(true);
         service.trackPresence({
-          id: playerInfo.id || Math.random().toString(36).substring(2, 9),
+          id: playerId,
           name: playerInfo.name,
           score: 0,
         });
         service.broadcastJoin({
-          id: playerInfo.id || Math.random().toString(36).substring(2, 9),
+          id: playerId,
           name: playerInfo.name,
         });
       },
@@ -53,17 +55,12 @@ export default function PlayerScreen({ playerInfo, onExit }) {
       onGameEnd: () => {
         setGameState((prev) => ({ ...prev, phase: GAME_PHASES.FINISHED }));
       },
-      onPlayerReject: (data) => {
-        if (data.name === playerInfo.name) {
-          setRejectedError(data.reason || "El apodo ya esta en uso en esta sala.");
-        }
-      },
     });
 
     return () => {
       service.unsubscribe();
     };
-  }, [playerInfo]);
+  }, [playerInfo.roomCode, playerInfo.name, playerId]);
 
   const handleVote = (label) => {
     if (hasVoted || gameState.phase !== GAME_PHASES.QUESTION) return;
@@ -78,33 +75,23 @@ export default function PlayerScreen({ playerInfo, onExit }) {
     }
   };
 
-  if (rejectedError) {
-    return (
-      <div style={{ minHeight: "100vh", backgroundColor: "#F8FAFC", padding: "24px 16px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <Card style={{ maxWidth: "420px", width: "100%", textAlign: "center", padding: "32px 20px" }}>
-          <div style={{ width: "56px", height: "56px", borderRadius: "14px", backgroundColor: "#FEE2E2", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-            <AlertTriangle size={28} color="#DC2626" />
-          </div>
-          <h3 style={{ fontSize: "20px", fontWeight: 800, color: "#991B1B", marginBottom: "8px" }}>
-            Apodo Duplicado
-          </h3>
-          <p style={{ color: "#64748B", fontSize: "14px", lineHeight: 1.5, marginBottom: "24px" }}>
-            {rejectedError}
-          </p>
-          <Button variant="primary" fullWidth onClick={onExit}>
-            Volver y Cambiar Apodo
-          </Button>
-        </Card>
-      </div>
-    );
-  }
+  const handleExit = () => {
+    clearActiveSession();
+    onExit();
+  };
+
+  const correctLetter =
+    gameState.correctAnswerIndex !== null && gameState.correctAnswerIndex !== undefined
+      ? OPTION_LABELS[gameState.correctAnswerIndex]
+      : null;
+  const isCorrect = selectedOption && correctLetter && selectedOption === correctLetter;
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#F8FAFC", padding: "16px" }}>
       <header style={{ maxWidth: "480px", margin: "0 auto 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <button
           type="button"
-          onClick={onExit}
+          onClick={handleExit}
           style={{ background: "none", border: "none", display: "flex", alignItems: "center", gap: "4px", color: "#64748B", fontSize: "13px", cursor: "pointer" }}
         >
           <ArrowLeft size={16} />
@@ -198,23 +185,77 @@ export default function PlayerScreen({ playerInfo, onExit }) {
           </div>
         )}
 
-        {/* 3. Pantalla de Revelacion */}
-        {gameState.phase === GAME_PHASES.REVEAL && (
+        {/* 3. Pantalla de Votos Recibidos */}
+        {gameState.phase === GAME_PHASES.VOTES && (
           <Card style={{ textAlign: "center", padding: "28px 16px" }}>
-            <h3 style={{ fontSize: "18px", fontWeight: 700, color: "#0F172A", marginBottom: "8px" }}>
-              Pregunta Cerrada
+            <div style={{ width: "48px", height: "48px", borderRadius: "12px", backgroundColor: "#EEF2FF", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+              <Clock size={24} color="#1E2761" />
+            </div>
+            <h3 style={{ fontSize: "18px", fontWeight: 700, color: "#0F172A", marginBottom: "6px" }}>
+              Tiempo Finalizado
             </h3>
             <p style={{ fontSize: "14px", color: "#64748B" }}>
-              Revisa la pantalla principal del proyector para ver el fundamento tecnico y la respuesta correcta.
+              Revisa la pantalla del proyector mientras se calculan los votos de la sala.
             </p>
           </Card>
         )}
 
-        {/* 4. Pantalla de Leaderboard */}
+        {/* 4. Pantalla de Revelacion */}
+        {gameState.phase === GAME_PHASES.REVEAL && (
+          <Card style={{ textAlign: "center", padding: "28px 16px" }}>
+            {selectedOption ? (
+              isCorrect ? (
+                <div>
+                  <div style={{ width: "56px", height: "56px", borderRadius: "14px", backgroundColor: "#DCFCE7", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+                    <CheckCircle size={32} color="#16A34A" />
+                  </div>
+                  <h3 style={{ fontSize: "20px", fontWeight: 800, color: "#15803D", marginBottom: "6px" }}>
+                    Respuesta Correcta
+                  </h3>
+                  <p style={{ fontSize: "15px", fontWeight: 700, color: "#166534", marginBottom: "8px" }}>
+                    +100 puntos sumados
+                  </p>
+                  <p style={{ fontSize: "13px", color: "#64748B" }}>
+                    Acertaste con la opcion <strong>{selectedOption}</strong>. Mira el proyector para ver el fundamento tecnico.
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ width: "56px", height: "56px", borderRadius: "14px", backgroundColor: "#FEE2E2", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+                    <XCircle size={32} color="#DC2626" />
+                  </div>
+                  <h3 style={{ fontSize: "20px", fontWeight: 800, color: "#991B1B", marginBottom: "6px" }}>
+                    Respuesta Incorrecta
+                  </h3>
+                  <p style={{ fontSize: "14px", color: "#475569", marginBottom: "8px" }}>
+                    Votaste la opcion <strong>{selectedOption}</strong>. La correcta era la <strong>{correctLetter}</strong>.
+                  </p>
+                  <p style={{ fontSize: "13px", color: "#64748B" }}>
+                    Revisa la explicacion teorica en la pantalla del proyector.
+                  </p>
+                </div>
+              )
+            ) : (
+              <div>
+                <div style={{ width: "56px", height: "56px", borderRadius: "14px", backgroundColor: "#FEF3C7", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+                  <AlertTriangle size={30} color="#D97706" />
+                </div>
+                <h3 style={{ fontSize: "18px", fontWeight: 800, color: "#92400E", marginBottom: "6px" }}>
+                  Sin Voto Registrado
+                </h3>
+                <p style={{ fontSize: "14px", color: "#64748B" }}>
+                  La respuesta correcta era la opcion <strong>{correctLetter}</strong>.
+                </p>
+              </div>
+            )}
+          </Card>
+        )}
+
+        {/* 5. Pantalla de Leaderboard */}
         {gameState.phase === GAME_PHASES.LEADERBOARD && (
           <Card style={{ textAlign: "center", padding: "28px 16px" }}>
             <h3 style={{ fontSize: "18px", fontWeight: 700, color: "#1E2761", marginBottom: "6px" }}>
-              Resultados Parciales
+              Posiciones Parciales
             </h3>
             <p style={{ fontSize: "13px", color: "#64748B" }}>
               Mira el proyector para conocer la tabla de clasificacion actualizada.
@@ -222,7 +263,7 @@ export default function PlayerScreen({ playerInfo, onExit }) {
           </Card>
         )}
 
-        {/* 5. Pantalla Final */}
+        {/* 6. Pantalla Final */}
         {gameState.phase === GAME_PHASES.FINISHED && (
           <Card style={{ textAlign: "center", padding: "36px 16px" }}>
             <Trophy size={36} color="#D97706" style={{ margin: "0 auto 12px" }} />
@@ -232,7 +273,7 @@ export default function PlayerScreen({ playerInfo, onExit }) {
             <p style={{ fontSize: "14px", color: "#64748B", marginBottom: "20px" }}>
               Gracias por participar en la actividad de modelamiento UML.
             </p>
-            <Button variant="primary" fullWidth onClick={onExit}>
+            <Button variant="primary" fullWidth onClick={handleExit}>
               Salir al Menu
             </Button>
           </Card>

@@ -3,6 +3,13 @@ import HubScreen from "./modes/HubScreen";
 import HostScreen from "./modes/HostScreen";
 import PlayerScreen from "./modes/PlayerScreen";
 import SoloScreen from "./modes/SoloScreen";
+import { AYUDANTIAS } from "./data";
+import {
+  saveActiveSession,
+  getActiveSession,
+  clearActiveSession,
+  getPlayerDeviceId,
+} from "./utils/session";
 
 function getInitialRoomCode() {
   if (typeof window !== "undefined" && window.location.search) {
@@ -13,9 +20,32 @@ function getInitialRoomCode() {
   return "";
 }
 
+function getInitialState() {
+  const active = getActiveSession();
+  if (active && active.role === "player" && active.name && active.roomCode) {
+    const matchingAyudantia =
+      AYUDANTIAS.find(
+        (a) => a.id === active.ayudantiaId || a.code.toUpperCase() === active.roomCode.toUpperCase()
+      ) || AYUDANTIAS[0];
+
+    return {
+      view: "player",
+      session: {
+        name: active.name,
+        roomCode: active.roomCode,
+        playerId: active.playerId || getPlayerDeviceId(),
+        ayudantia: matchingAyudantia,
+      },
+    };
+  }
+
+  return { view: "hub", session: null };
+}
+
 export default function App() {
-  const [currentView, setCurrentView] = useState("hub");
-  const [sessionData, setSessionData] = useState(null);
+  const [initial] = useState(getInitialState);
+  const [currentView, setCurrentView] = useState(initial.view);
+  const [sessionData, setSessionData] = useState(initial.session);
   const [initialRoomCode] = useState(getInitialRoomCode);
 
   const handleStartHost = ({ ayudantia, roomCode }) => {
@@ -24,7 +54,18 @@ export default function App() {
   };
 
   const handleJoinPlayer = ({ name, roomCode, ayudantia }) => {
-    setSessionData({ name, roomCode, ayudantia });
+    const playerId = getPlayerDeviceId();
+    const session = { name, roomCode, ayudantia, playerId };
+
+    saveActiveSession({
+      name,
+      roomCode,
+      playerId,
+      role: "player",
+      ayudantiaId: ayudantia.id,
+    });
+
+    setSessionData(session);
     setCurrentView("player");
   };
 
@@ -34,6 +75,7 @@ export default function App() {
   };
 
   const handleExitToHub = () => {
+    clearActiveSession();
     setSessionData(null);
     setCurrentView("hub");
   };
