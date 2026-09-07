@@ -3,6 +3,7 @@ import HubScreen from "./modes/HubScreen";
 import HostScreen from "./modes/HostScreen";
 import PlayerScreen from "./modes/PlayerScreen";
 import SoloScreen from "./modes/SoloScreen";
+import FastJoinScreen from "./modes/FastJoinScreen";
 import { AYUDANTIAS } from "./data";
 import {
   saveActiveSession,
@@ -47,6 +48,7 @@ export default function App() {
   const [currentView, setCurrentView] = useState(initial.view);
   const [sessionData, setSessionData] = useState(initial.session);
   const [initialRoomCode] = useState(getInitialRoomCode);
+  const [showFullHub, setShowFullHub] = useState(false);
 
   const handleStartHost = ({ ayudantia, roomCode }) => {
     setSessionData({ ayudantia, roomCode });
@@ -78,11 +80,22 @@ export default function App() {
     clearActiveSession();
     setSessionData(null);
     setCurrentView("hub");
+    setShowFullHub(true);
   };
+
+  const isFastJoinTarget = initialRoomCode && !showFullHub && currentView === "hub";
 
   return (
     <div>
-      {currentView === "hub" && (
+      {isFastJoinTarget && (
+        <FastJoinScreen
+          roomCode={initialRoomCode}
+          onJoin={handleJoinPlayer}
+          onGoToHub={() => setShowFullHub(true)}
+        />
+      )}
+
+      {!isFastJoinTarget && currentView === "hub" && (
         <HubScreen
           onStartHost={handleStartHost}
           onJoinPlayer={handleJoinPlayer}

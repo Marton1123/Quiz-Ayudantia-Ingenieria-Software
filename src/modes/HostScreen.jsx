@@ -31,9 +31,9 @@ export default function HostScreen({ ayudantia, roomCode, onExit }) {
   const [remainingSeconds, setRemainingSeconds] = useState(ayudantia.defaultTimerSeconds || 30);
   const [showQrModal, setShowQrModal] = useState(false);
 
-  const timerRef = useRef(null);
   const serviceRef = useRef(null);
   const playersRef = useRef([]);
+  const currentQuestionRef = useRef(ayudantia.questions[0]);
   const gameStateRef = useRef({ phase: GAME_PHASES.LOBBY, index: 0 });
 
   const currentQuestion = ayudantia.questions[currentQuestionIndex];
@@ -44,8 +44,9 @@ export default function HostScreen({ ayudantia, roomCode, onExit }) {
   }, [players]);
 
   useEffect(() => {
+    currentQuestionRef.current = currentQuestion;
     gameStateRef.current = { phase, index: currentQuestionIndex };
-  }, [phase, currentQuestionIndex]);
+  }, [currentQuestion, phase, currentQuestionIndex]);
 
   const origin =
     typeof window !== "undefined"
@@ -53,7 +54,29 @@ export default function HostScreen({ ayudantia, roomCode, onExit }) {
       : "https://quiz-ayudantia-ingenieria-software.vercel.app";
   const joinUrl = `${origin}/?join=${roomCode}`;
 
+  const handleTimeUp = () => {
+    setPhase(GAME_PHASES.VOTES);
+    if (serviceRef.current) {
+      serviceRef.current.broadcastState({ phase: GAME_PHASES.VOTES });
+    }
+  };
 
+  useEffect(() => {
+    if (phase !== GAME_PHASES.QUESTION) return;
+
+    const interval = setInterval(() => {
+      setRemainingSeconds((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          handleTimeUp();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [phase, currentQuestionIndex]);
 
   useEffect(() => {
     const service = new RealtimeQuizService(roomCode);
@@ -100,7 +123,7 @@ export default function HostScreen({ ayudantia, roomCode, onExit }) {
           );
 
           if (serviceRef.current) {
-            const currentQ = ayudantia.questions[gameStateRef.current.index];
+            const currentQ = currentQuestionRef.current;
             serviceRef.current.broadcastState({
               phase: gameStateRef.current.phase,
               questionIndex: gameStateRef.current.index,
@@ -136,7 +159,8 @@ export default function HostScreen({ ayudantia, roomCode, onExit }) {
           [optionLabel]: (prev[optionLabel] || 0) + 1,
         }));
 
-        const correctLabel = OPTION_LABELS[currentQuestion.ans];
+        const currentQ = currentQuestionRef.current;
+        const correctLabel = OPTION_LABELS[currentQ.ans];
         if (optionLabel === correctLabel) {
           setPlayers((prev) =>
             prev.map((p) =>
@@ -150,40 +174,15 @@ export default function HostScreen({ ayudantia, roomCode, onExit }) {
     });
 
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
       service.unsubscribe();
     };
-  }, [roomCode, currentQuestion.ans, ayudantia.questions]);
-
-  const startTimer = () => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    const duration = ayudantia.defaultTimerSeconds || 30;
-    setRemainingSeconds(duration);
-
-    timerRef.current = setInterval(() => {
-      setRemainingSeconds((prev) => {
-        if (prev <= 1) {
-          clearInterval(timerRef.current);
-          handleTimeUp();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
-
-  const handleTimeUp = () => {
-    setPhase(GAME_PHASES.VOTES);
-    if (serviceRef.current) {
-      serviceRef.current.broadcastState({ phase: GAME_PHASES.VOTES });
-    }
-  };
+  }, [roomCode, ayudantia.questions.length]);
 
   const handleStartGame = () => {
     setCurrentQuestionIndex(0);
     setVotes({});
+    setRemainingSeconds(ayudantia.defaultTimerSeconds || 30);
     setPhase(GAME_PHASES.QUESTION);
-    startTimer();
 
     if (serviceRef.current) {
       serviceRef.current.broadcastNext({
@@ -225,8 +224,8 @@ export default function HostScreen({ ayudantia, roomCode, onExit }) {
     const nextIndex = currentQuestionIndex + 1;
     setCurrentQuestionIndex(nextIndex);
     setVotes({});
+    setRemainingSeconds(ayudantia.defaultTimerSeconds || 30);
     setPhase(GAME_PHASES.QUESTION);
-    startTimer();
 
     if (serviceRef.current) {
       serviceRef.current.broadcastNext({
@@ -369,7 +368,7 @@ export default function HostScreen({ ayudantia, roomCode, onExit }) {
                   <ol style={{ margin: 0, paddingLeft: "20px", fontSize: "13.5px", color: "#475569", lineHeight: 1.6 }}>
                     <li>Apunta la camara de tu celular al codigo QR o ingresa la URL mostrada.</li>
                     <li>Verifica o edita tu apodo (o presiona Aleatorio).</li>
-                    <li>Presiona <strong>Entrar a la Sala</strong> para votar en vivo.</li>
+                    <li>Presiona <strong>Entrar al Quiz</strong> para votar en vivo.</li>
                   </ol>
                 </div>
 
