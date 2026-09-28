@@ -47,7 +47,7 @@ El sistema fue diseñado bajo principios rigurosos de **Clean Code**, **SOLID**,
     * Succión y absorción física hacia el botón (`playSuction`).
     * Llegada y retorno táctil de la carta al centro (`playCardReturn`).
     * Silencio durante el desplazamiento del cursor para garantizar una interacción visual limpia y sin fatiga auditiva.
-  * **Exportación en Canvas de Ultra Alta Definición (1792 x 2400)**: Renderizado de la carta completa en formato PNG sin pérdida, estampando de forma discreta dentro del marco inferior el número de serie criptográfico (`#SOLID-XXXX-XXXX` / `#UML-XXXX-XXXX`), el curso, el semestre y el isotipo vectorial oficial de GitHub junto a `@Marton1123`.
+  * **Exportación en Canvas de Ultra Alta Definición (1792 x 2400)**: Renderizado de la carta completa en formato PNG sin pérdida, estampando de forma discreta dentro del marco inferior el número de serie criptográfico (`#P1-XXXX-XXXX` / `#SOLID-XXXX-XXXX` / `#UML-XXXX-XXXX`), el curso, el semestre y el isotipo vectorial oficial de GitHub junto a `@Marton1123`.
   * **Servicio de Auditoría y Persistencia de Certificados (`certificateService.js`)**: Registro de descargas en almacenamiento local y en tabla remota de Supabase (`card_downloads`) sin recolectar ningún dato personal sensible.
 * **Catálogo Modular de Ayudantías**:
   * **Ayudantía N°2**: Modelamiento Conceptual y Diagramas UML (Casos de Uso, Clases, Actividades, Secuencia, Detección de Antipatrones).
@@ -94,6 +94,7 @@ public/
 |-- assets/              # Ilustraciones de alta resolución y sellos oficiales
 |   |-- ay02_uml.png     # Ilustración de recompensa Ayudantía 2
 |   |-- ay03_solid.png   # Ilustración de recompensa Ayudantía 3
+|   |-- ay04_repaso_p1.png# Ilustración de recompensa Ayudantía 4
 |   |-- seal_logo.png    # Sello de cera oficial 3D (2048x2048)
 |   |-- favicon_hi_res.png# Ícono de aplicación en alta resolución
 supabase/
@@ -102,7 +103,7 @@ supabase/
 
 ### Principios SOLID Aplicados:
 * **Single Responsibility (SRP)**: Cada componente resuelve una sola necesidad visual o lógica (`TimerRing` calcula y anima el tiempo; `VoteBars` proyecta la distribución de votos; `RewardCard` gestiona la experiencia física de certificación; `audioService` encapsula la síntesis Web Audio).
-* **Open/Closed (OCP)**: Para incorporar una nueva ayudantía (ejemplo: Ayudantía 4 de Patrones de Diseño GoF), se añade el archivo en `src/data/` y se enlaza en `src/data/index.js` sin modificar el motor de evaluación ni las vistas.
+* **Open/Closed (OCP)**: Para incorporar una nueva ayudantía (ejemplo: Ayudantía 5 de Arquitectura en 3 Capas), se añade el archivo en `src/data/` y se enlaza en `src/data/index.js` sin modificar el motor de evaluación ni las vistas.
 * **Liskov Substitution (LSP)**: Todos los módulos de contenido en `src/data/` cumplen la misma firma estructural (`id`, `title`, `badge`, `questions`), permitiendo que el Hub y los modos de juego operen polimórficamente sobre cualquiera de ellos.
 * **Interface Segregation (ISP)**: Los componentes genéricos exponen props especializadas y opcionales, evitando que componentes de presentación dependan de estructuras complejas no requeridas.
 * **Dependency Inversion (DIP)**: Los componentes de interfaz interactúan con servicios abstractos (`RealtimeQuizService`, `certificateService`), desacoplados del cliente de base de datos o de APIs externas directas.
