@@ -59,8 +59,13 @@ export default function RewardCard({
 
   // ID unico generado una sola vez por sesion de completitud
   const uniqueId = useMemo(() => {
-    const isSolid = title.toLowerCase().includes("solid");
-    return generateUniqueSerial(isSolid ? "SOLID" : "UML");
+    const lower = title.toLowerCase();
+    const prefix = lower.includes("solid")
+      ? "SOLID"
+      : lower.includes("p1") || lower.includes("repaso")
+      ? "P1"
+      : "UML";
+    return generateUniqueSerial(prefix);
   }, [title]);
 
   /**
@@ -172,10 +177,16 @@ export default function RewardCard({
   };
 
   const handleImgError = () => {
-    if (activeImgSrc !== "/assets/ay03_solid.png" && activeImgSrc !== "/assets/ay02_uml.png") {
+    if (
+      activeImgSrc !== "/assets/ay04_repaso_p1.png" &&
+      activeImgSrc !== "/assets/ay03_solid.png" &&
+      activeImgSrc !== "/assets/ay02_uml.png"
+    ) {
+      setCustomSrcOverride("/assets/ay04_repaso_p1.png");
+    } else if (activeImgSrc !== "/assets/ay03_solid.png") {
       setCustomSrcOverride("/assets/ay03_solid.png");
-    } else if (activeImgSrc !== "/favicon.png") {
-      setCustomSrcOverride("/favicon.png");
+    } else if (activeImgSrc !== "/favicon_hi_res.png") {
+      setCustomSrcOverride("/favicon_hi_res.png");
     } else {
       setImageError(true);
     }

@@ -1,7 +1,9 @@
+import { ay04RepasoP1 } from "./ay04_repaso_p1.js";
 import { ay03Solid } from "./ay03_solid.js";
 import { ay02Uml } from "./ay02_uml.js";
 
 export const AYUDANTIAS = [
+  ay04RepasoP1,
   ay03Solid,
   ay02Uml,
 ];

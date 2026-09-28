@@ -52,6 +52,7 @@ El sistema fue diseñado bajo principios rigurosos de **Clean Code**, **SOLID**,
 * **Catálogo Modular de Ayudantías**:
   * **Ayudantía N°2**: Modelamiento Conceptual y Diagramas UML (Casos de Uso, Clases, Actividades, Secuencia, Detección de Antipatrones).
   * **Ayudantía N°3**: Principios SOLID de Diseño Orientado a Objetos (Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, Dependency Inversion).
+  * **Ayudantía N°4**: Repaso Estratégico P1 (Pautas y Formativas 2026-01: V/F Razonado, INVEST, BDD, Límites WIP Kanban, Secuencia UML y Patrón Strategy).
 * **Cumplimiento Legal (Ley N° 21.719 - Chile)**: Privacidad desde el diseño y por defecto, minimización de datos mediante alias efímeros, sin persistencia de datos sensibles y sin cookies de rastreo comercial.
 
 ---
@@ -77,6 +78,7 @@ src/
 |   |-- index.js         # Catálogo maestro extensible de ayudantías
 |   |-- ay02_uml.js      # Banco de 16 preguntas de Modelamiento UML
 |   |-- ay03_solid.js    # Banco de 16 preguntas de Principios SOLID
+|   |-- ay04_repaso_p1.js# Banco de 16 preguntas de Repaso Estratégico P1
 |-- components/          # Componentes visuales genéricos y reutilizables
 |   |-- common/          # Button, Card, Badge, PrivacyNotice, QRCodeDisplay, RewardCard
 |   |-- quiz/            # TimerRing, VoteBars, Leaderboard, QuestionCard, MistakesCarousel
@@ -186,28 +188,28 @@ Con este único despliegue, la URL será permanente y válida para todas las ayu
 
 ## 8. Cómo Agregar una Nueva Ayudantía
 
-1. Crear el archivo `src/data/ay04_patrones.js` definiendo la estructura estándar:
+1. Crear el archivo `src/data/ay05_arquitectura.js` definiendo la estructura estándar:
 ```javascript
-export const ay04Patrones = {
-  id: "ay04",
-  code: "PATRONES",
-  title: "Ayudantía N°4: Patrones de Diseño GoF",
-  badge: "Patrones GoF",
+export const ay05Arquitectura = {
+  id: "ay05",
+  code: "ARQUITECTURA",
+  title: "Ayudantía N°5: Arquitectura en 3 Capas",
+  badge: "3 Capas",
   course: "Ingeniería de Software",
-  cardImage: "/assets/ay04_patrones.png",
+  cardImage: "/assets/ay05_arquitectura.png",
   questions: [
     {
       id: 1,
-      topic: "Creacionales",
-      q: "¿Cuál es el propósito principal del patrón Factory Method?",
+      topic: "Capas de Software",
+      q: "¿Cuál es la responsabilidad principal de la capa de presentación?",
       opts: [
-        "Definir una interfaz para crear un objeto delegando la instanciación a las subclases.",
-        "Garantizar que una clase tenga solo una instancia en memoria.",
-        "Convertir la interfaz de una clase en otra interfaz esperada por los clientes.",
-        "Separar la construcción de un objeto complejo de su representación final."
+        "Gestionar la interacción con el usuario y formatear los datos para su visualización.",
+        "Ejecutar directamente las consultas SQL a la base de datos transaccional.",
+        "Orquestar las reglas de negocio puras independientemente de la interfaz.",
+        "Gestionar la memoria física y los hilos del sistema operativo del servidor."
       ],
       ans: 0,
-      exp: "Factory Method define una interfaz para la creación de objetos, permitiendo que las subclases decidan qué clase instanciar."
+      exp: "La capa de presentación se encarga de recibir las entradas del usuario y proyectar la información adecuada."
     }
   ]
 };
@@ -215,12 +217,16 @@ export const ay04Patrones = {
 
 2. Registrar la ayudantía en `src/data/index.js`:
 ```javascript
-import { ay04Patrones } from "./ay04_patrones.js";
+import { ay04RepasoP1 } from "./ay04_repaso_p1.js";
+import { ay03Solid } from "./ay03_solid.js";
+import { ay02Uml } from "./ay02_uml.js";
+import { ay05Arquitectura } from "./ay05_arquitectura.js";
 
 export const AYUDANTIAS = [
-  ay02Uml,
+  ay04RepasoP1,
   ay03Solid,
-  ay04Patrones,
+  ay02Uml,
+  ay05Arquitectura,
 ];
 ```
 
